@@ -211,6 +211,27 @@
             background: #dc2626;
             color: #fff;
         }
+        .input-type-radio-group {
+            display: flex;
+            gap: 2em;
+            align-items: center;
+            margin-bottom: 0.5em;
+        }
+
+        .input-type-radio {
+            display: flex;
+            align-items: center;
+            font-size: 1.08em;
+            font-weight: 500;
+            cursor: pointer;
+            gap: 0.5em;
+        }
+
+        .input-type-radio input[type="radio"] {
+            accent-color: #e535ab;
+            width: 1.1em;
+            height: 1.1em;
+        }
     </style>
 </head>
 <!-- Google tag (gtag.js) -->
@@ -259,14 +280,31 @@
         <div class="hashtag">#LearnInPublic</div>
         <h1 class="hero-title">MCQ Quiz Platform</h1>
         <p class="hero-description">
-            Your AI-Powered Quiz Buddy! Create personalized quizzes on any topic, master every answer, and track your progress with smart insights.
+            Test your knowledge with personalized quizzes on any topic. Generate custom MCQ questions and track your progress in real-time.
         </p>
 
         <div id="quiz-form" class="form-container" style="display: {% if not questions %}block{% else %}none{% endif %};">
-            <form method="post" action="/">
+            <form method="post" action="/" enctype="multipart/form-data">
                 <div class="form-group">
+                    <label style="margin-bottom:0.5em; display:block;">Choose Input Type:</label>
+                    <div class="input-type-radio-group">
+                        <label class="input-type-radio">
+                            <input type="radio" name="input_type" value="text" checked>
+            Enter Topics
+                        </label>
+                        <label class="input-type-radio">
+                            <input type="radio" name="input_type" value="pdf">
+            Upload PDF
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group" id="text-input-group">
                     <label for="topics">Enter Topics (comma-separated):</label>
-                    <input type="text" id="topics" name="topics" class="form-input" placeholder="e.g., Python, Machine Learning, JavaScript" value="{{ topics }}" required>
+                    <input type="text" id="topics" name="topics" class="form-input" placeholder="e.g., Python, Machine Learning, JavaScript" value="{{ topics }}">
+                </div>
+                <div class="form-group" id="pdf-input-group" style="display:none;">
+                    <label for="pdf_file">Upload PDF:</label>
+                    <input type="file" id="pdf_file" name="pdf_file" class="form-input" accept="application/pdf">
                 </div>
                 <div class="form-group">
                     <label for="num_questions">Number of Questions (5-100):</label>
@@ -543,5 +581,22 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+document.addEventListener("DOMContentLoaded", function () {
+    const textGroup = document.getElementById('text-input-group');
+    const pdfGroup = document.getElementById('pdf-input-group');
+    document.querySelectorAll('input[name="input_type"]').forEach(el => {
+        el.addEventListener('change', function() {
+            if (this.value === 'text') {
+                textGroup.style.display = '';
+                pdfGroup.style.display = 'none';
+            } else {
+                textGroup.style.display = 'none';
+                pdfGroup.style.display = '';
+            }
+        });
+    });
+});
+</script>
 </body>
 </html>

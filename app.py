@@ -1,7 +1,7 @@
 import os
 import re
 from typing import List
-from fastapi import FastAPI, Request, Form
+from fastapi import FastAPI, Request, Form, UploadFile, File
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -138,9 +138,55 @@ async def home(request: Request):
     )
 
 @app.post("/", response_class=HTMLResponse)
-async def generate_quiz(request: Request, topics: str = Form(...), num_questions: int = Form(...), difficulty: str = Form(...)):
-    topic_list = [t.strip() for t in topics.split(",") if t.strip()]
-    if not topic_list or num_questions < 5 or num_questions > 100 or difficulty not in ["Easy", "Medium", "Hard"]:
+async def generate_quiz(
+    request: Request,
+    input_type: str = Form(...),
+    topics: str = Form(""),
+    num_questions: int = Form(...),
+    difficulty: str = Form(...),
+    pdf_file: UploadFile = File(None)
+):
+    content_text = ""
+    if input_type == "text":
+        topic_list = [t.strip() for t in topics.split(",") if t.strip()]
+        if not topic_list or num_questions < 5 or num_questions > 100 or difficulty not in ["Easy", "Medium", "Hard"]:
+            return templates.TemplateResponse(
+                "index.html",
+                {
+                    "request": request,
+                    "questions": [],
+                    "current_index": 0,
+                    "score": 0,
+                    "topics": topics,
+                    "num_questions": num_questions,
+                    "difficulty": difficulty,
+                    "error": "Please provide valid topics, a number of questions between 5 and 100, and a valid difficulty level."
+                }
+            )
+        content_text = ", ".join(topic_list)
+    elif input_type == "pdf" and pdf_file is not None:
+        import PyPDF2
+        from io import BytesIO
+        pdf_bytes = await pdf_file.read()
+        pdf_reader = PyPDF2.PdfReader(BytesIO(pdf_bytes))
+        content_text = ""
+        for page in pdf_reader.pages:
+            content_text += page.extract_text() or ""
+        if not content_text.strip() or num_questions < 5 or num_questions > 100 or difficulty not in ["Easy", "Medium", "Hard"]:
+            return templates.TemplateResponse(
+                "index.html",
+                {
+                    "request": request,
+                    "questions": [],
+                    "current_index": 0,
+                    "score": 0,
+                    "topics": "",
+                    "num_questions": num_questions,
+                    "difficulty": difficulty,
+                    "error": "Could not extract text from PDF, or invalid question count/difficulty."
+                }
+            )
+    else:
         return templates.TemplateResponse(
             "index.html",
             {
@@ -148,15 +194,16 @@ async def generate_quiz(request: Request, topics: str = Form(...), num_questions
                 "questions": [],
                 "current_index": 0,
                 "score": 0,
-                "topics": topics,
+                "topics": "",
                 "num_questions": num_questions,
                 "difficulty": difficulty,
-                "error": "Please provide valid topics, a number of questions between 5 and 100, and a valid difficulty level."
+                "error": "Please provide valid topics or upload a PDF."
             }
         )
 
+    # Use content_text as the context for Gemini
     try:
-        questions = await generate_mcqs(topic_list, num_questions, difficulty)
+        questions = await generate_mcqs_from_text(content_text, num_questions, difficulty)
         if not questions:
             return templates.TemplateResponse(
                 "index.html",
@@ -193,7 +240,6 @@ async def generate_quiz(request: Request, topics: str = Form(...), num_questions
             }
         )
         set_quiz_state(response, quiz_state)
-
         return response
     except Exception as e:
         return templates.TemplateResponse(
@@ -347,3 +393,25 @@ Explain in 2-3 sentences why the correct answer is right and why the user's answ
             "option_explanations": option_explanations,
         }
     )
+
+async def generate_mcqs_from_text(content_text: str, num_questions: int, difficulty: str):
+    prompt = f"""Based on the following content, generate {num_questions} multiple choice questions (MCQs) at {difficulty} difficulty level.
+Content:
+{content_text}
+Each question must have 4 options labeled a., b., c., d. and mention the correct answer clearly as 'Answer: <option letter>'.
+Format:
+Q1: <question>
+a. <option1>
+b. <option2>
+c. <option3>
+d. <option4>
+Answer: <a/b/c/d>
+"""
+    def sync_call():
+        model = genai.GenerativeModel("gemini-2.5-flash-preview-05-20")
+        response = model.generate_content(prompt)
+        return response.text
+
+    response_text = await asyncio.to_thread(sync_call)
+    print("GEMINI RESPONSE:\n", response_text)  # <-- Add this line
+    return parse_questions(response_text)
