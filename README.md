@@ -1,6 +1,6 @@
-# 🎓 Quizly - AI Powered Quiz Generator
+# 🎓 Quizlic - AI Powered Quiz Generator
 
-**Quizly** is a smart quiz application that uses **Google Gemini** (via the Generative AI API) to generate multiple choice questions based on user-defined topics. It's built with a **FastAPI backend** and a simple **HTML/CSS/JavaScript frontend**.
+**Quizlic** is a smart quiz application that uses **Google Gemini** (via the Generative AI API) to generate multiple choice questions based on user-defined topics. It's built with a **FastAPI backend** and a simple **HTML/CSS/JavaScript frontend**.
 
 ---
 
@@ -28,8 +28,8 @@
 1. **Clone the repository**:
 
 ```bash
-git clone https://github.com/your-username/quizly.git
-cd quizly
+git clone https://github.com/your-username/Quizlic.git
+cd Quizlic
 ```
 
 2. **Install dependencies**:
