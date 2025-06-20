@@ -1,92 +1,64 @@
-# 🎓 Quizlic - AI Powered Quiz Generator
+Quizlic - AI-Powered Quiz Generator
 
-**Quizlic** is a smart quiz application that uses **Google Gemini** (via the Generative AI API) to generate multiple choice questions based on user-defined topics. It's built with a **FastAPI backend** and a simple **HTML/CSS/JavaScript frontend**.
+Quizlic is an intelligent quiz generation application that uses the Google Gemini Generative AI API to create multiple-choice questions based on user-defined topics. The app is built with a FastAPI backend and a minimalist HTML, CSS, and JavaScript frontend.
 
----
+Features
+	•	Generates dynamic, multiple-choice questions from any user-specified topic
+	•	Provides instant feedback for questions
+	•	Leverages the Google Gemini (Generative AI) API for intelligent questions
+	•	Features a clean and minimal user interface
 
-## 🚀 Features
+Tech Stack
 
-* Generate quizzes dynamically from any topic
-* Multiple-choice questions with instant feedback
-* AI-powered using Gemini (Google Generative AI)
-* Clean, minimal UI for a smooth quiz-taking experience
+Layer	Technology
+Backend	FastAPI
+Frontend	HTML, CSS, JavaScript
+AI Model	Google Gemini via API
 
----
+Installation
+	1.	Clone the repository:
 
-## 🛠️ Tech Stack
-
-| Layer        | Technology            |
-| ------------ | --------------------- |
-| **Backend**  | FastAPI               |
-| **Frontend** | HTML, CSS, JavaScript |
-| **AI Model** | Google Gemini via API |
-
----
-
-## 📦 Installation
-
-1. **Clone the repository**:
-
-```bash
 git clone https://github.com/your-username/Quizlic.git
 cd Quizlic
-```
 
-2. **Install dependencies**:
 
-```bash
+	2.	Install dependencies:
+
 pip install -r requirements.txt
-```
 
-3. **Set up `.env` file**:
 
-```
+	3.	Create a .env file:
+
 GENAI_API_KEY=your_google_gemini_api_key
-```
 
-4. **Run the application locally**:
 
-```bash
+	4.	Run the application:
+
 uvicorn main:app --reload
-```
 
----
 
-## 🌐 Deployment
 
-This app can be deployed on platforms like **Render**, **Railway**, or **Vercel**.
+Deployment
 
-* For **Render**: Set the start command as:
+Deploy this app on platforms like Render, Railway, or Vercel.
 
-```
+For Render:
+
 unicorn main:app --reload
-```
 
-* For **Railway**: Visit your project dashboard, find the `https://...railway.app` URL for your deployed app.
+For Railway:
+Visit the project dashboard and obtain your app’s deployment URL.
 
----
+Usage
+	1.	Open the app in a browser.
+	2.	Enter topics (comma-separated).
+	3.	Choose the number of questions.
+	4.	Click “Generate Quiz” and start answering!
 
-## 🧪 Usage
+Contributing
 
-1. Open the app in a browser.
-2. Enter your topics (comma-separated).
-3. Select the number of questions.
-4. Click **Generate Quiz** and start answering!
+Pull requests are welcome. For major changes, open an issue first to discuss proposed changes.
 
----
+License
 
-## 🙌 Contributing
-
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-
----
-
-## 📄 License
-
-[MIT](LICENSE)
-
----
-
-## 📬 Contact
-
-Made with ❤️ by [Abhiraj Adhikary](https://github.com/abhirajadhikary06) and [Anik Chand](https://github.com/anikchand461)
+MIT
