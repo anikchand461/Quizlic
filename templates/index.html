@@ -287,16 +287,11 @@
             <form method="post" action="/" enctype="multipart/form-data">
                 <div class="form-group">
                     <label style="margin-bottom:0.5em; display:block;">Choose Input Type:</label>
-                    <div class="input-type-radio-group">
-                        <label class="input-type-radio">
-                            <input type="radio" name="input_type" value="text" checked>
-            Enter Topics
-                        </label>
-                        <label class="input-type-radio">
-                            <input type="radio" name="input_type" value="pdf">
-            Upload PDF
-                        </label>
+                    <div class="input-type-btn-group" style="display: flex; gap: 1em;">
+                        <button type="button" id="btn-text" class="input-type-btn active" style="padding: 0.5em 1.2em; border-radius: 20px; border: none; background: #e535ab; color: #fff; font-weight: 600; cursor: pointer;">Enter Topics</button>
+                        <button type="button" id="btn-pdf" class="input-type-btn" style="padding: 0.5em 1.2em; border-radius: 20px; border: none; background: #2d223f; color: #fff; font-weight: 600; cursor: pointer;">Upload PDF</button>
                     </div>
+                    <input type="hidden" name="input_type" id="input_type" value="text">
                 </div>
                 <div class="form-group" id="text-input-group">
                     <label for="topics">Enter Topics (comma-separated):</label>
@@ -583,19 +578,42 @@ document.addEventListener("DOMContentLoaded", function () {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
 document.addEventListener("DOMContentLoaded", function () {
+    // Button-based input type selection
+    const btnText = document.getElementById('btn-text');
+    const btnPdf = document.getElementById('btn-pdf');
+    const inputType = document.getElementById('input_type');
     const textGroup = document.getElementById('text-input-group');
     const pdfGroup = document.getElementById('pdf-input-group');
-    document.querySelectorAll('input[name="input_type"]').forEach(el => {
-        el.addEventListener('change', function() {
-            if (this.value === 'text') {
-                textGroup.style.display = '';
-                pdfGroup.style.display = 'none';
-            } else {
-                textGroup.style.display = 'none';
-                pdfGroup.style.display = '';
-            }
-        });
+
+    function setActive(type) {
+        if (type === 'text') {
+            btnText.classList.add('active');
+            btnText.style.background = '#e535ab';
+            btnPdf.classList.remove('active');
+            btnPdf.style.background = '#2d223f';
+            inputType.value = 'text';
+            textGroup.style.display = '';
+            pdfGroup.style.display = 'none';
+        } else {
+            btnPdf.classList.add('active');
+            btnPdf.style.background = '#e535ab';
+            btnText.classList.remove('active');
+            btnText.style.background = '#2d223f';
+            inputType.value = 'pdf';
+            textGroup.style.display = 'none';
+            pdfGroup.style.display = '';
+        }
+    }
+
+    btnText.addEventListener('click', function() {
+        setActive('text');
     });
+    btnPdf.addEventListener('click', function() {
+        setActive('pdf');
+    });
+
+    // Set initial state
+    setActive(inputType.value || 'text');
 });
 </script>
 </body>
