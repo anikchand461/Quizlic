@@ -1,21 +1,26 @@
 import os
 import re
 from typing import List
-from fastapi import FastAPI, Request, Form, UploadFile, File
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request, Form, UploadFile, File, Depends
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import google.generativeai as genai
 from starlette.templating import Jinja2Templates
-from fastapi.responses import JSONResponse
 import asyncio
 from itsdangerous import URLSafeSerializer
 from fastapi import Cookie, Response
+from civic_auth.integrations.fastapi import create_auth_router, create_auth_dependencies
 
-# Load Gemini API key from .env
+# Load environment variables
 load_dotenv()
 GENAI_API_KEY = os.getenv("GENAI_API_KEY")
+CIVIC_CLIENT_ID = os.getenv("CIVIC_CLIENT_ID")
+CIVIC_REDIRECT_URL = os.getenv("CIVIC_REDIRECT_URL")
+CIVIC_POST_LOGOUT_REDIRECT_URL = os.getenv("CIVIC_POST_LOGOUT_REDIRECT_URL")
+
+# Configure Gemini API
 genai.configure(api_key=GENAI_API_KEY)
 
 app = FastAPI()
@@ -25,6 +30,19 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Templates directory
 templates = Jinja2Templates(directory="templates")
+
+# Civic authentication configuration
+config = {
+    "client_id": CIVIC_CLIENT_ID,
+    "redirect_url": CIVIC_REDIRECT_URL,
+    "post_logout_redirect_url": CIVIC_POST_LOGOUT_REDIRECT_URL
+}
+
+# Add authentication routes
+app.include_router(create_auth_router(config))
+
+# Create authentication dependencies
+civic_auth_dep, get_current_user, require_auth = create_auth_dependencies(config)
 
 SECRET_KEY = os.getenv("SECRET_KEY", "supersecret")
 serializer = URLSafeSerializer(SECRET_KEY)
@@ -97,54 +115,60 @@ def set_quiz_state(response: Response, state: dict):
 
 # --------------- Routes ---------------
 @app.get("/", response_class=HTMLResponse)
-async def home(request: Request):
-    quiz_state = get_quiz_state(request.cookies.get("quiz_state"))
-    # Reset quiz state if action=reset
-    if request.query_params.get("action") == "reset":
-        quiz_state = {
-            "questions": [],
-            "correct_answers": [],
-            "current_index": 0,
-            "score": 0
-        }
-        response = templates.TemplateResponse(
+async def landing(request: Request, user: str = Depends(civic_auth_dep)):
+    if user:
+        quiz_state = get_quiz_state(request.cookies.get("quiz_state"))
+        if request.query_params.get("action") == "reset":
+            quiz_state = {
+                "questions": [],
+                "correct_answers": [],
+                "user_answers": [],
+                "current_index": 0,
+                "score": 0
+            }
+            response = templates.TemplateResponse(
+                "index.html",
+                {
+                    "request": request,
+                    "questions": [],
+                    "current_index": 0,
+                    "score": 0,
+                    "topics": "",
+                    "num_questions": 5,
+                    "difficulty": "Medium",
+                    "error": None
+                }
+            )
+            set_quiz_state(response, quiz_state)
+            return response
+
+        return templates.TemplateResponse(
             "index.html",
             {
                 "request": request,
-                "questions": [],
-                "current_index": 0,
-                "score": 0,
+                "questions": quiz_state["questions"],
+                "current_index": quiz_state["current_index"],
+                "score": quiz_state["score"],
                 "topics": "",
                 "num_questions": 5,
                 "difficulty": "Medium",
                 "error": None
             }
         )
-        set_quiz_state(response, quiz_state)
-        return response
-
     return templates.TemplateResponse(
-        "index.html",
-        {
-            "request": request,
-            "questions": quiz_state["questions"],
-            "current_index": quiz_state["current_index"],
-            "score": quiz_state["score"],
-            "topics": "",
-            "num_questions": 5,
-            "difficulty": "Medium",
-            "error": None
-        }
+        "landing.html",
+        {"request": request}
     )
 
-@app.post("/", response_class=HTMLResponse)
+@app.post("/quiz", response_class=HTMLResponse)
 async def generate_quiz(
     request: Request,
     input_type: str = Form(...),
     topics: str = Form(""),
     num_questions: int = Form(...),
     difficulty: str = Form(...),
-    pdf_file: UploadFile = File(None)
+    pdf_file: UploadFile = File(None),
+    user: str = Depends(require_auth)
 ):
     content_text = ""
     if input_type == "text":
@@ -201,7 +225,6 @@ async def generate_quiz(
             }
         )
 
-    # Use content_text as the context for Gemini
     try:
         questions = await generate_mcqs_from_text(content_text, num_questions, difficulty)
         if not questions:
@@ -222,6 +245,7 @@ async def generate_quiz(
         quiz_state = {
             "questions": questions,
             "correct_answers": [q["correct_answer"] for q in questions],
+            "user_answers": [],
             "current_index": 0,
             "score": 0
         }
@@ -257,7 +281,7 @@ async def generate_quiz(
         )
 
 @app.post("/submit_answer", response_class=JSONResponse)
-async def submit_answer(request: Request, answer: str = Form(...)):
+async def submit_answer(request: Request, answer: str = Form(...), user: str = Depends(require_auth)):
     quiz_state = get_quiz_state(request.cookies.get("quiz_state"))
     if not quiz_state["questions"] or quiz_state["current_index"] >= len(quiz_state["questions"]):
         return JSONResponse({"error": "No active quiz or quiz completed"})
@@ -283,7 +307,7 @@ async def submit_answer(request: Request, answer: str = Form(...)):
     return response
 
 @app.get("/review/{question_index}", response_class=HTMLResponse)
-async def review_question(request: Request, question_index: int):
+async def review_question(request: Request, question_index: int, user: str = Depends(require_auth)):
     quiz_state = get_quiz_state(request.cookies.get("quiz_state"))
     questions = quiz_state.get("questions", [])
     user_answers = quiz_state.get("user_answers", [])
@@ -326,7 +350,7 @@ Explain why the correct answer is right and why the user's answer is incorrect."
         return "Could not generate explanation at this time."
 
 @app.get("/review_all", response_class=HTMLResponse)
-async def review_all(request: Request):
+async def review_all(request: Request, user: str = Depends(require_auth)):
     quiz_state = get_quiz_state(request.cookies.get("quiz_state"))
     questions = quiz_state.get("questions", [])
     user_answers = quiz_state.get("user_answers", [])
@@ -413,5 +437,4 @@ Answer: <a/b/c/d>
         return response.text
 
     response_text = await asyncio.to_thread(sync_call)
-    print("GEMINI RESPONSE:\n", response_text)  # <-- Add this line
     return parse_questions(response_text)
