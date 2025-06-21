@@ -234,15 +234,6 @@
         }
     </style>
 </head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3X3Y1QRD4P"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-3X3Y1QRD4P');
-</script>
 <body>
     <header class="header">
         <div class="logo">
@@ -287,7 +278,7 @@
         </p>
 
         <div id="quiz-form" class="form-container" style="display: {% if not questions %}block{% else %}none{% endif %};">
-            <form method="post" action="/" enctype="multipart/form-data">
+            <form method="post" action="/quiz" enctype="multipart/form-data">
                 <div class="form-group">
                     <label style="margin-bottom:0.5em; display:block;">Choose Input Type:</label>
                     <div class="input-type-btn-group" style="display: flex; gap: 1em;">
@@ -379,7 +370,7 @@
                         
                         ${chartHTML}
                         ${reviewButton}
-                        <button onclick="window.location.href='/?action=reset'" class="btn-primary">Try Another Quiz</button>
+                        <button onclick="window.location.href='/quiz?action=reset'" class="btn-primary">Try Another Quiz</button>
                     </div>
                 `;
 
