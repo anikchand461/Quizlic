@@ -16,6 +16,7 @@ class User(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     email = Column(String, nullable=False)
+    generation_count = Column(Integer, default=0)
 
 class QuizRequest(Base):
     __tablename__ = "quiz_requests"

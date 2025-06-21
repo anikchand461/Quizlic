@@ -301,7 +301,7 @@ async def generate_quiz(
     difficulty: str = Form(...),
     pdf_file: UploadFile = File(None),
     image_file: UploadFile = File(None),
-    current_user: str = Depends(get_current_user)
+    current_user: DBUser = Depends(get_current_user)
 ):
     content_text = ""
     if input_type == "text":
@@ -423,11 +423,11 @@ async def generate_quiz(
         set_quiz_state(response, quiz_state)
 
         db = SessionLocal()
-        user = current_user  # get current user object
-
+        user = db.query(DBUser).filter(DBUser.id == current_user.id).first()
+        user.generation_count += 1  # Increment generation count
         quiz_request = QuizRequest(
             user_id=user.id,
-            input_type=input_type,  # e.g., "text", "pdf", etc.
+            input_type=input_type,
             topic=topics,
             num_questions=num_questions,
             difficulty=difficulty
@@ -623,5 +623,18 @@ def profile(request: Request, current_user: DBUser = Depends(get_current_user)):
             "request": request,
             "username": current_user.username,  # Pass username only
             "quiz_requests": quiz_requests
+        }
+    )
+
+@app.get("/leaderboard", response_class=HTMLResponse)
+def leaderboard(request: Request):
+    db = SessionLocal()
+    users = db.query(DBUser).order_by(DBUser.generation_count.desc()).all()
+    db.close()
+    return templates.TemplateResponse(
+        "leaderboard.html",
+        {
+            "request": request,
+            "users": users
         }
     )
