@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Leaderboard | Quizlic</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="main-content">
+        <h1 class="hero-title">Leaderboard</h1>
+        <table style="width:100%; border-collapse:collapse; margin-top:2rem;">
+            <thead>
+                <tr style="background:rgba(229,53,171,0.08); color:#e535ab;">
+                    <th style="padding:0.75rem; border-bottom:1px solid #374151;">Rank</th>
+                    <th style="padding:0.75rem; border-bottom:1px solid #374151;">Username</th>
+                    <th style="padding:0.75rem; border-bottom:1px solid #374151;">Quiz Generations</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr style="background:rgba(139,92,246,0.05); color:#fff;">
+                    <td style="padding:0.75rem; border-bottom:1px solid #232323;">{{ loop.index }}</td>
+                    <td style="padding:0.75rem; border-bottom:1px solid #232323;">{{ user.username }}</td>
+                    <td style="padding:0.75rem; border-bottom:1px solid #232323;">{{ user.generation_count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
