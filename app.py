@@ -14,6 +14,8 @@ from passlib.context import CryptContext
 import uuid
 import requests
 from tempfile import NamedTemporaryFile
+from db import SessionLocal, QuizRequest, User as DBUser
+from sqlalchemy.orm import Session
 
 # Load Gemini API key from .env
 load_dotenv()
@@ -58,15 +60,21 @@ def get_password_hash(password):
 def create_session_token(username: str):
     return serializer.dumps({"username": username})
 
+def get_user_by_username(db: Session, username: str):
+    return db.query(DBUser).filter(DBUser.username == username).first()
+
 def get_current_user(session: str = Cookie(None)):
     if not session:
         raise HTTPException(status_code=401, detail="Not authenticated")
     try:
         data = serializer.loads(session)
         username = data.get("username")
-        if username not in users_db:
+        db = SessionLocal()
+        user = get_user_by_username(db, username)
+        db.close()
+        if not user:
             raise HTTPException(status_code=401, detail="Invalid session")
-        return username
+        return user  # <-- Return the user object, not username
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid session")
 
@@ -183,50 +191,56 @@ async def auth_handler(
     password: str = Form(...),
     name: str = Form(None)
 ):
-    # Use email as username for login/signup
     username = email.strip().lower()
-    if mode == "signup":
-        if not name or not username or not password:
-            return templates.TemplateResponse(
-                "auth.html",
-                {
-                    "request": request,
-                    "error": "All fields are required for signup.",
-                    "mode": "signup"
-                }
+    db = SessionLocal()
+    try:
+        if mode == "signup":
+            if not name or not username or not password:
+                return templates.TemplateResponse(
+                    "auth.html",
+                    {
+                        "request": request,
+                        "error": "All fields are required for signup.",
+                        "mode": "signup"
+                    }
+                )
+            if get_user_by_username(db, username):
+                return templates.TemplateResponse(
+                    "auth.html",
+                    {
+                        "request": request,
+                        "error": "Email already registered.",
+                        "mode": "signup"
+                    }
+                )
+            db_user = DBUser(
+                username=username,
+                hashed_password=get_password_hash(password),
+                email=name
             )
-        if username in users_db:
-            return templates.TemplateResponse(
-                "auth.html",
-                {
-                    "request": request,
-                    "error": "Email already registered.",
-                    "mode": "signup"
-                }
-            )
-        users_db[username] = {
-            "hashed_password": get_password_hash(password),
-            "name": name
-        }
-        response = RedirectResponse(url="/quiz", status_code=303)
-        session_token = create_session_token(username)
-        response.set_cookie("session", session_token, httponly=True, max_age=3600)
-        return response
-    else:  # mode == "login"
-        user = users_db.get(username)
-        if not user or not verify_password(password, user["hashed_password"]):
-            return templates.TemplateResponse(
-                "auth.html",
-                {
-                    "request": request,
-                    "error": "Invalid email or password.",
-                    "mode": "login"
-                }
-            )
-        response = RedirectResponse(url="/quiz", status_code=303)
-        session_token = create_session_token(username)
-        response.set_cookie("session", session_token, httponly=True, max_age=3600)
-        return response
+            db.add(db_user)
+            db.commit()
+            response = RedirectResponse(url="/quiz", status_code=303)
+            session_token = create_session_token(username)
+            response.set_cookie("session", session_token, httponly=True, max_age=3600)
+            return response
+        else:  # mode == "login"
+            user = get_user_by_username(db, username)
+            if not user or not verify_password(password, user.hashed_password):
+                return templates.TemplateResponse(
+                    "auth.html",
+                    {
+                        "request": request,
+                        "error": "Invalid email or password.",
+                        "mode": "login"
+                    }
+                )
+            response = RedirectResponse(url="/quiz", status_code=303)
+            session_token = create_session_token(username)
+            response.set_cookie("session", session_token, httponly=True, max_age=3600)
+            return response
+    finally:
+        db.close()
 
 @app.get("/logout")
 async def logout(response: Response):
@@ -274,7 +288,7 @@ async def quiz_page(request: Request, current_user: str = Depends(get_current_us
             "num_questions": 5,
             "difficulty": "Medium",
             "error": None,
-            "username": current_user
+            "username": current_user.username,
         }
     )
 
@@ -407,6 +421,21 @@ async def generate_quiz(
             }
         )
         set_quiz_state(response, quiz_state)
+
+        db = SessionLocal()
+        user = get_user_by_username(db, current_user)  # get current user object
+
+        quiz_request = QuizRequest(
+            user_id=user.id,
+            input_type=input_type,  # e.g., "text", "pdf", etc.
+            topic=topics,
+            num_questions=num_questions,
+            difficulty=difficulty
+        )
+        db.add(quiz_request)
+        db.commit()
+        db.close()
+
         return response
     except Exception as e:
         return templates.TemplateResponse(
@@ -574,3 +603,25 @@ Answer: <a/b/c/d>
 
     response_text = await asyncio.to_thread(sync_call)
     return parse_questions(response_text)
+
+# Example FastAPI route
+from fastapi import Request, Depends
+from fastapi.responses import HTMLResponse
+from starlette.templating import Jinja2Templates
+
+templates = Jinja2Templates(directory="templates")
+
+# Example FastAPI route
+@app.get("/profile")
+def profile(request: Request, current_user: DBUser = Depends(get_current_user)):
+    db = SessionLocal()
+    quiz_requests = db.query(QuizRequest).filter(QuizRequest.user_id == current_user.id).all()
+    db.close()
+    return templates.TemplateResponse(
+        "profile.html",
+        {
+            "request": request,
+            "username": current_user.username,  # Pass username only
+            "quiz_requests": quiz_requests
+        }
+    )
