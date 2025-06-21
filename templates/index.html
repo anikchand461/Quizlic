@@ -237,8 +237,10 @@
 <body>
     <header class="header">
         <div class="logo">
+            <a href="/quiz" style="display: flex; align-items: center; gap: 0.5em; text-decoration: none;">
             <img src="/static/logo-3.png" alt="Quizlic Logo" class="logo-icon">
-            <span>Quizlic</span>
+            <span style="color: #fff;">Quizlic</span>
+            </a>
         </div>
         <button class="hamburger" id="hamburger-btn" aria-label="Toggle navigation">
             <span></span>
@@ -326,6 +328,54 @@
         </div>
     </main>
 
+    <!-- Leaderboard Floating Button -->
+<style>
+    .leaderboard-fab {
+        position: fixed;
+        bottom: 32px;
+        right: 32px;
+        width: 60px;
+        height: 60px;
+        background: #e535ab;
+        border-radius: 18px;
+        box-shadow: 0 4px 16px rgba(24, 16, 40, 0.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        border: none;
+        cursor: pointer;
+        transition: box-shadow 0.2s, background 0.2s;
+    }
+    .leaderboard-fab:hover {
+        background: #e535ab;
+        box-shadow: 0 8px 24px rgba(229, 53, 171, 0.18);
+    }
+    .leaderboard-fab svg {
+        width: 32px;
+        height: 32px;
+        display: block;
+        color: #181028;
+    }
+    @media (max-width: 700px) {
+        .leaderboard-fab {
+            bottom: 18px;
+            right: 18px;
+            width: 48px;
+            height: 48px;
+        }
+        .leaderboard-fab svg {
+            width: 24px;
+            height: 24px;
+        }
+    }
+</style>
+<!-- Font Awesome CDN for the leaderboard icon -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+<a href="/leaderboard" class="leaderboard-fab" title="Leaderboard">
+    <i class="fa-solid fa-ranking-star" style="font-size: 2em; color: #181028;"></i>
+</a>
     <script>
         const questions = {{ questions | tojson | safe }};
         let currentIndex = {{ current_index }};
