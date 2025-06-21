@@ -271,7 +271,7 @@ async def quiz_page(request: Request, current_user: str = Depends(get_current_us
                 "num_questions": 5,
                 "difficulty": "Medium",
                 "error": None,
-                "username": current_user
+                "username": current_user.username  # <-- FIXED
             }
         )
         set_quiz_state(response, quiz_state)
@@ -288,7 +288,7 @@ async def quiz_page(request: Request, current_user: str = Depends(get_current_us
             "num_questions": 5,
             "difficulty": "Medium",
             "error": None,
-            "username": current_user.username,
+            "username": current_user.username,  # <-- FIXED
         }
     )
 
@@ -318,7 +318,7 @@ async def generate_quiz(
                     "num_questions": num_questions,
                     "difficulty": difficulty,
                     "error": "Please provide valid topics, a number of questions between 5 and 100, and a valid difficulty level.",
-                    "username": current_user
+                    "username": current_user.username
                 }
             )
         content_text = ", ".join(topic_list)
@@ -342,7 +342,7 @@ async def generate_quiz(
                     "num_questions": num_questions,
                     "difficulty": difficulty,
                     "error": "Could not extract text from PDF, or invalid question count/difficulty.",
-                    "username": current_user
+                    "username": current_user.username  # <-- FIXED
                 }
             )
     elif input_type == "image" and image_file is not None:
@@ -361,7 +361,7 @@ async def generate_quiz(
                     "num_questions": num_questions,
                     "difficulty": difficulty,
                     "error": "Could not extract text from image, or invalid question count/difficulty.",
-                    "username": current_user
+                    "username": current_user.username 
                 }
             )
     else:
@@ -376,7 +376,7 @@ async def generate_quiz(
                 "num_questions": num_questions,
                 "difficulty": difficulty,
                 "error": "Please provide valid topics, upload a PDF, or upload an image.",
-                "username": current_user
+                "username": current_user.username 
             }
         )
 
@@ -394,7 +394,7 @@ async def generate_quiz(
                     "num_questions": num_questions,
                     "difficulty": difficulty,
                     "error": "Failed to generate questions. Try again.",
-                    "username": current_user
+                    "username": current_user.username 
                 }
             )
 
@@ -417,7 +417,7 @@ async def generate_quiz(
                 "num_questions": num_questions,
                 "difficulty": difficulty,
                 "error": None,
-                "username": current_user
+                "username": current_user.username 
             }
         )
         set_quiz_state(response, quiz_state)
@@ -449,7 +449,7 @@ async def generate_quiz(
                 "num_questions": num_questions,
                 "difficulty": difficulty,
                 "error": f"Error generating quiz: {str(e)}",
-                "username": current_user
+                "username": current_user.username 
             }
         )
 
@@ -509,7 +509,7 @@ async def review_question(
             "correct_answer": correct_answer,
             "reason": reason,
             "question_index": question_index,
-            "username": current_user
+            "username": current_user.username 
         }
     )
 
@@ -579,7 +579,7 @@ Explain in 2-3 sentences why the correct answer is right and why the user's answ
             "user_answers": user_answers,
             "explanations": explanations,
             "option_explanations": option_explanations,
-            "username": current_user
+            "username": current_user.username 
         }
     )
 
