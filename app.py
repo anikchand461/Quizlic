@@ -423,7 +423,7 @@ async def generate_quiz(
         set_quiz_state(response, quiz_state)
 
         db = SessionLocal()
-        user = get_user_by_username(db, current_user)  # get current user object
+        user = current_user  # get current user object
 
         quiz_request = QuizRequest(
             user_id=user.id,
