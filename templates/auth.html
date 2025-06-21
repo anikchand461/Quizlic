@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quizlic</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    <style>
+        .toggle-btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 1em;
+            margin-bottom: 1.5em;
+        }
+        .toggle-btn {
+            padding: 0.5em 1.5em;
+            border-radius: 20px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            background: #2d223f;
+            color: #fff;
+            transition: background 0.2s;
+        }
+        .toggle-btn.active {
+            background: #e535ab;
+            color: #fff;
+        }
+        .form-container .error, .form-container .message {
+            text-align: center;
+            margin-bottom: 1em;
+            padding: 0.7em 1em;
+            border-radius: 10px;
+            font-weight: 600;
+            background: #ef4444;
+            color: #fff;
+            display: block;
+        }
+        .form-container .message {
+            background: #22c55e;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <img src="/static/logo-3.png" alt="Logo" class="logo-icon">
+            Quizlic
+        </div>
+        <nav class="nav">
+            <a href="/">Home</a>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <div class="hashtag">#QuizTime</div>
+        <div class="toggle-btn-group">
+            <button id="login-toggle" class="toggle-btn active" type="button">Login</button>
+            <button id="signup-toggle" class="toggle-btn" type="button">Sign Up</button>
+        </div>
+        <h1 class="hero-title" id="form-title">Login to Your Account</h1>
+        <p class="hero-description" id="form-desc">
+            Sign in to start creating and taking quizzes.
+        </p>
+
+        <div class="form-container">
+            {% if error %}
+                <div class="error" id="msg-div">{{ error }}</div>
+            {% elif message %}
+                <div class="message" id="msg-div">{{ message }}</div>
+            {% endif %}
+            <form id="auth-form" action="/auth" method="post">
+                <input type="hidden" name="mode" id="mode" value="login">
+                <div class="form-group" id="name-group" style="display:none;">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" name="name" class="form-input" placeholder="Enter your name">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" class="form-input" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" class="form-input" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="btn-primary" id="submit-btn">Login</button>
+            </form>
+            <p style="text-align: center; margin-top: 1rem;">
+                <span id="toggle-text">Don't have an account?</span>
+                <a href="#" id="toggle-link" style="color: #e535ab; text-decoration: none;">Sign Up</a>
+            </p>
+        </div>
+    </main>
+    <script>
+        // Toggle logic
+        const loginToggle = document.getElementById('login-toggle');
+        const signupToggle = document.getElementById('signup-toggle');
+        const modeInput = document.getElementById('mode');
+        const nameGroup = document.getElementById('name-group');
+        const formTitle = document.getElementById('form-title');
+        const formDesc = document.getElementById('form-desc');
+        const submitBtn = document.getElementById('submit-btn');
+        const toggleText = document.getElementById('toggle-text');
+        const toggleLink = document.getElementById('toggle-link');
+        const authForm = document.getElementById('auth-form');
+
+        function setMode(mode) {
+            if (mode === 'login') {
+                loginToggle.classList.add('active');
+                signupToggle.classList.remove('active');
+                nameGroup.style.display = 'none';
+                formTitle.textContent = 'Login to Your Account';
+                formDesc.textContent = 'Sign in to start creating and taking quizzes.';
+                submitBtn.textContent = 'Login';
+                modeInput.value = 'login';
+                toggleText.textContent = "Don't have an account?";
+                toggleLink.textContent = "Sign Up";
+            } else {
+                signupToggle.classList.add('active');
+                loginToggle.classList.remove('active');
+                nameGroup.style.display = '';
+                formTitle.textContent = 'Create an Account';
+                formDesc.textContent = 'Join now to create and take quizzes tailored to your interests.';
+                submitBtn.textContent = 'Sign Up';
+                modeInput.value = 'signup';
+                toggleText.textContent = "Already have an account?";
+                toggleLink.textContent = "Login";
+            }
+        }
+
+        loginToggle.addEventListener('click', function() {
+            setMode('login');
+        });
+        signupToggle.addEventListener('click', function() {
+            setMode('signup');
+        });
+        toggleLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            setMode(modeInput.value === 'login' ? 'signup' : 'login');
+        });
+
+        // On page load, set mode based on server value if available
+        {% if mode == "signup" %}
+            setMode('signup');
+        {% else %}
+            setMode('login');
+        {% endif %}
+
+        // Hide messages after 3000ms
+        window.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                var msgDiv = document.getElementById('msg-div');
+                if (msgDiv) {
+                    msgDiv.style.display = 'none';
+                }
+            }, 3000);
+        });
+
+        // Optional: clear form fields on mode switch
+        function clearForm() {
+            authForm.reset();
+        }
+        loginToggle.addEventListener('click', clearForm);
+        signupToggle.addEventListener('click', clearForm);
+        toggleLink.addEventListener('click', clearForm);
+    </script>
+</body>
+</html>

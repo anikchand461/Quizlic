@@ -1,17 +1,17 @@
 import os
 import re
 from typing import List
-from fastapi import FastAPI, Request, Form, UploadFile, File
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request, Form, UploadFile, File, Depends, HTTPException, Response, Cookie
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import google.generativeai as genai
 from starlette.templating import Jinja2Templates
-from fastapi.responses import JSONResponse
 import asyncio
 from itsdangerous import URLSafeSerializer
-from fastapi import Cookie, Response
+from passlib.context import CryptContext
+import uuid
 
 # Load Gemini API key from .env
 load_dotenv()
@@ -26,14 +26,47 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Templates directory
 templates = Jinja2Templates(directory="templates")
 
+# Secret key for session management
 SECRET_KEY = os.getenv("SECRET_KEY", "supersecret")
 serializer = URLSafeSerializer(SECRET_KEY)
 
-# --------------- Pydantic models for internal use ---------------
+# Password hashing
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# In-memory user store (replace with database in production)
+users_db = {}
+
+# --------------- Pydantic models ---------------
 class Question(BaseModel):
     question: str
     options: List[str]
     correct_answer: str
+
+class User(BaseModel):
+    username: str
+    password: str
+
+# --------------- Authentication ---------------
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+def create_session_token(username: str):
+    return serializer.dumps({"username": username})
+
+def get_current_user(session: str = Cookie(None)):
+    if not session:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    try:
+        data = serializer.loads(session)
+        username = data.get("username")
+        if username not in users_db:
+            raise HTTPException(status_code=401, detail="Invalid session")
+        return username
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid session")
 
 # --------------- Gemini API & parsing ---------------
 async def generate_mcqs(topics: List[str], num_questions: int, difficulty: str):
@@ -76,7 +109,6 @@ def parse_questions(text: str):
             })
     return mcqs
 
-# Update get_quiz_state and set_quiz_state to store user answers
 def get_quiz_state(cookie: str = None):
     if cookie:
         try:
@@ -97,13 +129,91 @@ def set_quiz_state(response: Response, state: dict):
 
 # --------------- Routes ---------------
 @app.get("/", response_class=HTMLResponse)
-async def home(request: Request):
+async def login_signup_page(request: Request, session: str = Cookie(None)):
+    # If user is already logged in, redirect to quiz page
+    if session:
+        try:
+            get_current_user(session)
+            return RedirectResponse(url="/quiz")
+        except HTTPException:
+            pass  # Invalid session, show login page
+    return templates.TemplateResponse(
+        "auth.html",
+        {
+            "request": request,
+            "error": None,
+            "mode": "login"  # Default to login mode
+        }
+    )
+
+@app.post("/auth", response_class=HTMLResponse)
+async def auth_handler(
+    request: Request,
+    mode: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(...),
+    name: str = Form(None)
+):
+    # Use email as username for login/signup
+    username = email.strip().lower()
+    if mode == "signup":
+        if not name or not username or not password:
+            return templates.TemplateResponse(
+                "auth.html",
+                {
+                    "request": request,
+                    "error": "All fields are required for signup.",
+                    "mode": "signup"
+                }
+            )
+        if username in users_db:
+            return templates.TemplateResponse(
+                "auth.html",
+                {
+                    "request": request,
+                    "error": "Email already registered.",
+                    "mode": "signup"
+                }
+            )
+        users_db[username] = {
+            "hashed_password": get_password_hash(password),
+            "name": name
+        }
+        response = RedirectResponse(url="/quiz", status_code=303)
+        session_token = create_session_token(username)
+        response.set_cookie("session", session_token, httponly=True, max_age=3600)
+        return response
+    else:  # mode == "login"
+        user = users_db.get(username)
+        if not user or not verify_password(password, user["hashed_password"]):
+            return templates.TemplateResponse(
+                "auth.html",
+                {
+                    "request": request,
+                    "error": "Invalid email or password.",
+                    "mode": "login"
+                }
+            )
+        response = RedirectResponse(url="/quiz", status_code=303)
+        session_token = create_session_token(username)
+        response.set_cookie("session", session_token, httponly=True, max_age=3600)
+        return response
+
+@app.get("/logout")
+async def logout(response: Response):
+    response = RedirectResponse(url="/")
+    response.delete_cookie("session")
+    response.delete_cookie("quiz_state")
+    return response
+
+@app.get("/quiz", response_class=HTMLResponse)
+async def quiz_page(request: Request, current_user: str = Depends(get_current_user)):
     quiz_state = get_quiz_state(request.cookies.get("quiz_state"))
-    # Reset quiz state if action=reset
     if request.query_params.get("action") == "reset":
         quiz_state = {
             "questions": [],
             "correct_answers": [],
+            "user_answers": [],
             "current_index": 0,
             "score": 0
         }
@@ -117,7 +227,8 @@ async def home(request: Request):
                 "topics": "",
                 "num_questions": 5,
                 "difficulty": "Medium",
-                "error": None
+                "error": None,
+                "username": current_user
             }
         )
         set_quiz_state(response, quiz_state)
@@ -133,18 +244,20 @@ async def home(request: Request):
             "topics": "",
             "num_questions": 5,
             "difficulty": "Medium",
-            "error": None
+            "error": None,
+            "username": current_user
         }
     )
 
-@app.post("/", response_class=HTMLResponse)
+@app.post("/quiz", response_class=HTMLResponse)
 async def generate_quiz(
     request: Request,
     input_type: str = Form(...),
     topics: str = Form(""),
     num_questions: int = Form(...),
     difficulty: str = Form(...),
-    pdf_file: UploadFile = File(None)
+    pdf_file: UploadFile = File(None),
+    current_user: str = Depends(get_current_user)
 ):
     content_text = ""
     if input_type == "text":
@@ -160,7 +273,8 @@ async def generate_quiz(
                     "topics": topics,
                     "num_questions": num_questions,
                     "difficulty": difficulty,
-                    "error": "Please provide valid topics, a number of questions between 5 and 100, and a valid difficulty level."
+                    "error": "Please provide valid topics, a number of questions between 5 and 100, and a valid difficulty level.",
+                    "username": current_user
                 }
             )
         content_text = ", ".join(topic_list)
@@ -183,7 +297,8 @@ async def generate_quiz(
                     "topics": "",
                     "num_questions": num_questions,
                     "difficulty": difficulty,
-                    "error": "Could not extract text from PDF, or invalid question count/difficulty."
+                    "error": "Could not extract text from PDF, or invalid question count/difficulty.",
+                    "username": current_user
                 }
             )
     else:
@@ -197,11 +312,11 @@ async def generate_quiz(
                 "topics": "",
                 "num_questions": num_questions,
                 "difficulty": difficulty,
-                "error": "Please provide valid topics or upload a PDF."
+                "error": "Please provide valid topics or upload a PDF.",
+                "username": current_user
             }
         )
 
-    # Use content_text as the context for Gemini
     try:
         questions = await generate_mcqs_from_text(content_text, num_questions, difficulty)
         if not questions:
@@ -215,13 +330,15 @@ async def generate_quiz(
                     "topics": topics,
                     "num_questions": num_questions,
                     "difficulty": difficulty,
-                    "error": "Failed to generate questions. Try again."
+                    "error": "Failed to generate questions. Try again.",
+                    "username": current_user
                 }
             )
 
         quiz_state = {
             "questions": questions,
             "correct_answers": [q["correct_answer"] for q in questions],
+            "user_answers": [],
             "current_index": 0,
             "score": 0
         }
@@ -236,7 +353,8 @@ async def generate_quiz(
                 "topics": topics,
                 "num_questions": num_questions,
                 "difficulty": difficulty,
-                "error": None
+                "error": None,
+                "username": current_user
             }
         )
         set_quiz_state(response, quiz_state)
@@ -252,12 +370,17 @@ async def generate_quiz(
                 "topics": topics,
                 "num_questions": num_questions,
                 "difficulty": difficulty,
-                "error": f"Error generating quiz: {str(e)}"
+                "error": f"Error generating quiz: {str(e)}",
+                "username": current_user
             }
         )
 
 @app.post("/submit_answer", response_class=JSONResponse)
-async def submit_answer(request: Request, answer: str = Form(...)):
+async def submit_answer(
+    request: Request,
+    answer: str = Form(...),
+    current_user: str = Depends(get_current_user)
+):
     quiz_state = get_quiz_state(request.cookies.get("quiz_state"))
     if not quiz_state["questions"] or quiz_state["current_index"] >= len(quiz_state["questions"]):
         return JSONResponse({"error": "No active quiz or quiz completed"})
@@ -283,7 +406,11 @@ async def submit_answer(request: Request, answer: str = Form(...)):
     return response
 
 @app.get("/review/{question_index}", response_class=HTMLResponse)
-async def review_question(request: Request, question_index: int):
+async def review_question(
+    request: Request,
+    question_index: int,
+    current_user: str = Depends(get_current_user)
+):
     quiz_state = get_quiz_state(request.cookies.get("quiz_state"))
     questions = quiz_state.get("questions", [])
     user_answers = quiz_state.get("user_answers", [])
@@ -304,29 +431,12 @@ async def review_question(request: Request, question_index: int):
             "correct_answer": correct_answer,
             "reason": reason,
             "question_index": question_index,
+            "username": current_user
         }
     )
 
-async def explain_answer(question_text, options, correct_answer, user_answer):
-    if user_answer == correct_answer:
-        return "Your answer is correct. Well done!"
-    prompt = f"""Question: {question_text}
-Options: {options}
-Correct Answer: {correct_answer}
-User's Answer: {user_answer}
-Explain why the correct answer is right and why the user's answer is incorrect."""
-    def sync_call():
-        model = genai.GenerativeModel("gemini-2.5-flash-preview-05-20")
-        response = model.generate_content(prompt)
-        return response.text
-    try:
-        reason = await asyncio.to_thread(sync_call)
-        return reason
-    except Exception:
-        return "Could not generate explanation at this time."
-
 @app.get("/review_all", response_class=HTMLResponse)
-async def review_all(request: Request):
+async def review_all(request: Request, current_user: str = Depends(get_current_user)):
     quiz_state = get_quiz_state(request.cookies.get("quiz_state"))
     questions = quiz_state.get("questions", [])
     user_answers = quiz_state.get("user_answers", [])
@@ -391,6 +501,7 @@ Explain in 2-3 sentences why the correct answer is right and why the user's answ
             "user_answers": user_answers,
             "explanations": explanations,
             "option_explanations": option_explanations,
+            "username": current_user
         }
     )
 
@@ -413,5 +524,4 @@ Answer: <a/b/c/d>
         return response.text
 
     response_text = await asyncio.to_thread(sync_call)
-    print("GEMINI RESPONSE:\n", response_text)  # <-- Add this line
     return parse_questions(response_text)

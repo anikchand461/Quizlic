@@ -266,6 +266,7 @@
             <a href="https://github.com/abhirajadhikary06/Quizlic" class="nav-btn">GitHub</a>
             <a href="https://open-launch.com/projects/Quizlic" class="nav-btn">Open Launch</a>
         </nav>
+        <!-- Add Logout button beside GitHub in the top right corner -->
         <div class="actions">
             <a href="https://github.com/abhirajadhikary06/Quizlic" class="btn btn-outline" style="transition: color 0.2s; color: #e535ab;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: -0.125em; margin-right: 0.25rem;">
@@ -273,10 +274,12 @@
                 </svg>
                 GitHub
             </a>
+            <a href="/logout" class="btn btn-logout" style="margin-left: 0.7em; background: #e535ab; color: #fff; border-radius: 10px; padding: 0.5em 1.2em; font-weight: 600; border: none; transition: background 0.2s;">Logout</a>
         </div>
     </header>
 
     <main class="main-content">
+        <div style="color: #fff; font-size: 1.1em; font-weight: 600; margin-bottom: 0.5em;">#Welcome {{ username }}</div>
         <div class="hashtag">#LearnInPublic</div>
         <h1 class="hero-title">MCQ Quiz Platform</h1>
         <p class="hero-description">
