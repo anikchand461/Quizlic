@@ -525,3 +525,5 @@ Answer: <a/b/c/d>
 
     response_text = await asyncio.to_thread(sync_call)
     return parse_questions(response_text)
+
+# Add the image upload logic
