@@ -54,6 +54,10 @@
     </header>
 
     <main class="main-content">
+        <div style="width:100%; display:flex; justify-content:center; margin-top: 2em; margin-bottom: 2em;">
+    <img src="/static/banner.png" alt="Quiz Time Banner" style="max-width: 1100px; width: 100%; border-radius: 18px; box-shadow: 0 4px 24px rgba(24,16,40,0.10); object-fit: cover;">
+</div>
+
         <div class="hashtag">#QuizTime</div>
         <div class="toggle-btn-group">
             <button id="login-toggle" class="toggle-btn active" type="button">Login</button>
@@ -91,7 +95,107 @@
                 <a href="#" id="toggle-link" style="color: #e535ab; text-decoration: none;">Sign Up</a>
             </p>
         </div>
+        <div style="width:100%; display:flex; justify-content:center; align-items:center; gap:2.5em; margin: 3em 0 2em 0; flex-wrap: wrap; margin-bottom: 2em;">
+        <img src="/static/phone.png" alt="Quizlic Mobile Mockup" style="max-width: 180px; width: 100%; border-radius: 18px; box-shadow: 0 4px 24px rgba(24,16,40,0.13); object-fit: cover;">
+        <div style="font-size: 2.1em; color: #e535ab; font-weight: 800; max-width: 520px; text-align: left; line-height: 1.2;">
+            “Quizlic makes learning fun, fast, and truly yours.”
+        </div>
+            </div>
+    <!-- Testimonials Section -->
+    <div style="width:100%; display:flex; justify-content:center; gap:2em; flex-wrap:wrap; margin-bottom: 3em; margin-top: 2em;">
+        <!-- Testimonial 1: 5 filled stars -->
+        <div style="background:#241F2E; color:#fff; border-radius:16px; box-shadow:0 2px 12px rgba(229,53,171,0.07); padding:1.5em 1.2em; max-width:320px; min-width:220px; flex:1 1 220px; margin:0.5em;">
+            <div style="margin-bottom:0.7em;">
+                <span style="color:#e535ab; font-size:1.2em;">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                </span>
+            </div>
+            <div style="font-size:1.1em; font-style:italic; margin-bottom:0.7em;">"I never thought quizzes could be this engaging. Quizlic is my go-to for quick learning!"</div>
+            <div style="font-weight:700; color:#e535ab;">— Priya S.</div>
+        </div>
+        <!-- Testimonial 2: 4 filled, 1 unfilled star -->
+        <div style="background:#241F2E; color:#fff; border-radius:16px; box-shadow:0 2px 12px rgba(229,53,171,0.07); padding:1.5em 1.2em; max-width:320px; min-width:220px; flex:1 1 220px; margin:0.5em;">
+            <div style="margin-bottom:0.7em;">
+                <span style="color:#e535ab; font-size:1.2em;">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="far fa-star" style="color:#e535ab;"></i>
+                </span>
+            </div>
+            <div style="font-size:1.1em; font-style:italic; margin-bottom:0.7em;">"The custom quizzes help me prepare for exams in a fun way. Highly recommended!"</div>
+            <div style="font-weight:700; color:#e535ab;">— Rahul M.</div>
+        </div>
+        <!-- Testimonial 3: 4 filled, 1 half-filled star -->
+        <div style="background:#241F2E; color:#fff; border-radius:16px; box-shadow:0 2px 12px rgba(229,53,171,0.07); padding:1.5em 1.2em; max-width:320px; min-width:220px; flex:1 1 220px; margin:0.5em;">
+            <div style="margin-bottom:0.7em;">
+                <span style="color:#e535ab; font-size:1.2em;">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star-half-alt"></i>
+                </span>
+            </div>
+            <div style="font-size:1.1em; font-style:italic; margin-bottom:0.7em;">"Love the interface and the instant feedback. Quizlic makes learning addictive!"</div>
+            <div style="font-weight:700; color:#e535ab;">— Sneha T.</div>
+        </div>
+    </div>
+    </div>
     </main>
+        <footer style="background: #181028; color: #fff; padding: 2em 0 1em 0; text-align: center; border-top: 1px solid #2d223f; margin-top: -2em;">
+        <div style="max-width: 900px; margin: 0 auto; display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 2.5em;">
+            <div style="flex: 1 1 220px; min-width: 200px; text-align: left;">
+                <div style="display: flex; align-items: center; gap: 0.7em; margin-bottom: 0.7em;">
+                    <img src="/static/logo-3.png" alt="Quizlic Logo" style="width: 38px; height: 38px; border-radius: 8px;">
+                    <span style="font-size: 1.3em; font-weight: 700; color: #e535ab;">Quizlic</span>
+                </div>
+                <div style="color: #e535ab; font-size: 1em; margin-bottom: 0.7em;">
+                    The fun way to learn, revise, and test yourself on any topic.
+                </div>
+                <div style="font-size: 0.95em; color: #bdbdbd;">
+                    &copy; {{ year or 2025 }} Quizlic. All rights reserved.
+                </div>
+            </div>
+            <div style="flex: 1 1 160px; min-width: 140px; text-align: left;">
+                <div style="font-weight: 700; color: #e535ab; margin-bottom: 0.6em;">Quick Links</div>
+                <div><a href="/" style="color: #fff; text-decoration: none;">Home</a></div>
+                <div><a href="/quiz" style="color: #fff; text-decoration: none;">Quiz</a></div>
+                <div><a href="/leaderboard" style="color: #fff; text-decoration: none;">Leaderboard</a></div>
+                <div><a href="https://github.com/abhirajadhikary06/Quizlic" target="_blank" style="color: #fff; text-decoration: none;">GitHub</a></div>
+            </div>
+            <div style="flex: 1 1 180px; min-width: 140px; text-align: left;">
+                <div style="font-weight: 700; color: #e535ab; margin-bottom: 0.6em;">Contact</div>
+                <div>
+                    <a href="mailto:contact@quizlic.com" style="color: #fff; text-decoration: none;">
+                        contact@quizlic.com
+                    </a>
+                </div>
+                <div style="margin-top: 0.7em;">
+                    <a href="https://twitter.com/abhirajadhikary" target="_blank" style="color: #e535ab; margin-right: 1em; font-size: 1.3em;">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="https://github.com/abhirajadhikary06" target="_blank" style="color: #e535ab; margin-right: 1em; font-size: 1.3em;">
+                        <i class="fab fa-github"></i>
+                    </a>
+                    <a href="https://linkedin.com/in/abhirajadhikary06" target="_blank" style="color: #e535ab; font-size: 1.3em;">
+                        <i class="fab fa-linkedin"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div style="margin-top: 2em; color: #bdbdbd; font-size: 0.95em;">
+            Made with <span style="color: #e535ab;">&#10084;</span> by the Quizlic Team.
+        </div>
+    </footer>
+    <!-- Font Awesome CDN for social icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<!-- ...existing code below... -->
     <script>
         // Toggle logic
         const loginToggle = document.getElementById('login-toggle');
