@@ -12,6 +12,8 @@ import asyncio
 from itsdangerous import URLSafeSerializer
 from passlib.context import CryptContext
 import uuid
+import requests
+from tempfile import NamedTemporaryFile
 
 # Load Gemini API key from .env
 load_dotenv()
@@ -126,6 +128,33 @@ def get_quiz_state(cookie: str = None):
 def set_quiz_state(response: Response, state: dict):
     cookie_val = serializer.dumps(state)
     response.set_cookie("quiz_state", cookie_val, httponly=True, max_age=3600)
+
+# --- OCR Space API Helper ---
+def ocr_space_extract(image_file, api_key, language='eng'):
+    url = 'https://api.ocr.space/parse/image'
+    with NamedTemporaryFile(delete=False, suffix=".jpg") as temp_img:
+        temp_img.write(image_file)
+        temp_img.flush()
+        temp_img.seek(0)
+        with open(temp_img.name, 'rb') as f:
+            payload = {
+                'isOverlayRequired': True,
+                'apikey': api_key,
+                'language': language,
+                'OCREngine': 2,
+                'isTable': True,
+                'scale': True,
+                'detectOrientation': True
+            }
+            files = {'file': f}
+            response = requests.post(url, data=payload, files=files)
+            result = response.json()
+            if result.get("IsErroredOnProcessing"):
+                return ""
+            parsed_results = result.get("ParsedResults", [])
+            if parsed_results:
+                return parsed_results[0].get("ParsedText", "")
+            return ""
 
 # --------------- Routes ---------------
 @app.get("/", response_class=HTMLResponse)
@@ -257,6 +286,7 @@ async def generate_quiz(
     num_questions: int = Form(...),
     difficulty: str = Form(...),
     pdf_file: UploadFile = File(None),
+    image_file: UploadFile = File(None),
     current_user: str = Depends(get_current_user)
 ):
     content_text = ""
@@ -301,6 +331,25 @@ async def generate_quiz(
                     "username": current_user
                 }
             )
+    elif input_type == "image" and image_file is not None:
+        image_bytes = await image_file.read()
+        ocr_api_key = os.getenv("OCR_SPACE_API_KEY")
+        content_text = ocr_space_extract(image_bytes, api_key=ocr_api_key, language='eng')
+        if not content_text.strip() or num_questions < 5 or num_questions > 100 or difficulty not in ["Easy", "Medium", "Hard"]:
+            return templates.TemplateResponse(
+                "index.html",
+                {
+                    "request": request,
+                    "questions": [],
+                    "current_index": 0,
+                    "score": 0,
+                    "topics": "",
+                    "num_questions": num_questions,
+                    "difficulty": difficulty,
+                    "error": "Could not extract text from image, or invalid question count/difficulty.",
+                    "username": current_user
+                }
+            )
     else:
         return templates.TemplateResponse(
             "index.html",
@@ -312,7 +361,7 @@ async def generate_quiz(
                 "topics": "",
                 "num_questions": num_questions,
                 "difficulty": difficulty,
-                "error": "Please provide valid topics or upload a PDF.",
+                "error": "Please provide valid topics, upload a PDF, or upload an image.",
                 "username": current_user
             }
         )
@@ -525,5 +574,3 @@ Answer: <a/b/c/d>
 
     response_text = await asyncio.to_thread(sync_call)
     return parse_questions(response_text)
-
-# Add the image upload logic

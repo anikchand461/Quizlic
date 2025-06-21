@@ -284,6 +284,7 @@
                     <div class="input-type-btn-group" style="display: flex; gap: 1em;">
                         <button type="button" id="btn-text" class="input-type-btn active" style="padding: 0.5em 1.2em; border-radius: 20px; border: none; background: #e535ab; color: #fff; font-weight: 600; cursor: pointer;">Enter Topics</button>
                         <button type="button" id="btn-pdf" class="input-type-btn" style="padding: 0.5em 1.2em; border-radius: 20px; border: none; background: #2d223f; color: #fff; font-weight: 600; cursor: pointer;">Upload PDF</button>
+                        <button type="button" id="btn-image" class="input-type-btn" style="padding: 0.5em 1.2em; border-radius: 20px; border: none; background: #2d223f; color: #fff; font-weight: 600; cursor: pointer;">Upload Image</button>
                     </div>
                     <input type="hidden" name="input_type" id="input_type" value="text">
                 </div>
@@ -294,6 +295,10 @@
                 <div class="form-group" id="pdf-input-group" style="display:none;">
                     <label for="pdf_file">Upload PDF:</label>
                     <input type="file" id="pdf_file" name="pdf_file" class="form-input" accept="application/pdf">
+                </div>
+                <div class="form-group" id="image-input-group" style="display:none;">
+                    <label for="image_file">Upload Image:</label>
+                    <input type="file" id="image_file" name="image_file" class="form-input" accept="image/*">
                 </div>
                 <div class="form-group">
                     <label for="num_questions">Number of Questions (5-100):</label>
@@ -575,9 +580,11 @@ document.addEventListener("DOMContentLoaded", function () {
     // Button-based input type selection
     const btnText = document.getElementById('btn-text');
     const btnPdf = document.getElementById('btn-pdf');
+    const btnImage = document.getElementById('btn-image');
     const inputType = document.getElementById('input_type');
     const textGroup = document.getElementById('text-input-group');
     const pdfGroup = document.getElementById('pdf-input-group');
+    const imageGroup = document.getElementById('image-input-group');
 
     function setActive(type) {
         if (type === 'text') {
@@ -585,17 +592,34 @@ document.addEventListener("DOMContentLoaded", function () {
             btnText.style.background = '#e535ab';
             btnPdf.classList.remove('active');
             btnPdf.style.background = '#2d223f';
+            btnImage.classList.remove('active');
+            btnImage.style.background = '#2d223f';
             inputType.value = 'text';
             textGroup.style.display = '';
             pdfGroup.style.display = 'none';
-        } else {
+            imageGroup.style.display = 'none';
+        } else if (type === 'pdf') {
             btnPdf.classList.add('active');
             btnPdf.style.background = '#e535ab';
             btnText.classList.remove('active');
             btnText.style.background = '#2d223f';
+            btnImage.classList.remove('active');
+            btnImage.style.background = '#2d223f';
             inputType.value = 'pdf';
             textGroup.style.display = 'none';
             pdfGroup.style.display = '';
+            imageGroup.style.display = 'none';
+        } else if (type === 'image') {
+            btnImage.classList.add('active');
+            btnImage.style.background = '#e535ab';
+            btnText.classList.remove('active');
+            btnText.style.background = '#2d223f';
+            btnPdf.classList.remove('active');
+            btnPdf.style.background = '#2d223f';
+            inputType.value = 'image';
+            textGroup.style.display = 'none';
+            pdfGroup.style.display = 'none';
+            imageGroup.style.display = '';
         }
     }
 
@@ -604,6 +628,9 @@ document.addEventListener("DOMContentLoaded", function () {
     });
     btnPdf.addEventListener('click', function() {
         setActive('pdf');
+    });
+    btnImage.addEventListener('click', function() {
+        setActive('image');
     });
 
     // Set initial state
