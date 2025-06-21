@@ -9,3 +9,5 @@ python-multipart
 itsdangerous
 PyPDF2
 civic-auth[fastapi]
+passlib
+bycrypt
