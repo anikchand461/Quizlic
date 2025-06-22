@@ -1,8 +1,8 @@
-Quizlic - AI-Powered Quiz Generation Application
+# Quizlic - AI-Powered Quiz Generation Application
 
-Quizlic is a state-of-the-art quiz generation application that uses the Google Gemini Generative AI API to create sophisticated, context-aware multiple choice questions. It now supports extracting text from PDFs and images (using the OCR Space API), making it ideal for creating questions from documents, images, or other learning materials.
+## Quizlic is a state-of-the-art quiz generation application that uses the Google Gemini Generative AI API to create sophisticated, context-aware multiple choice questions. It now supports extracting text from PDFs and images (using the OCR Space API), making it ideal for creating questions from documents, images, or other learning materials.
 
-Developed with a robust FastAPI backend, an interactive HTML/CSS/JavaScript frontend, and powered by SQLite for data storage, Quizlic delivers a seamless and personalized user experience.
+## Developed with a robust FastAPI backend, an interactive HTML/CSS/JavaScript frontend, and powered by SQLite for data storage, Quizlic delivers a seamless and personalized user experience.
 
 Features
 	•	AI-Driven Quiz Generation across topics, PDFs, and images
